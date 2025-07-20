@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:HandheldCommander.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="HandheldCommander.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="HandheldCommander">
+
+    <Window.Resources>
+        <vm:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+    </Window.Resources>
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,*">
+        <!-- Breadcrumbs Row -->
+        <ScrollViewer Grid.Row="0" Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="4">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding LeftPanelBreadcrumbs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding}" TextWrapping="NoWrap"/>
+                                <TextBlock Text=" > " Margin="2,0" TextWrapping="NoWrap"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <ScrollViewer Grid.Row="0" Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="4">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding RightPanelBreadcrumbs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding}" TextWrapping="NoWrap"/>
+                                <TextBlock Text=" > " Margin="2,0" TextWrapping="NoWrap"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <!-- Panels Row -->
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="{Binding LeftPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
+            <ListBox x:Name="LeftPanelListBox" ItemsSource="{Binding LeftPanelItems}" SelectedIndex="{Binding LeftPanelSelectedIndex}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Icon}" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding Name}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <Border Grid.Row="1" Grid.Column="1" BorderBrush="{Binding RightPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
+            <ListBox x:Name="RightPanelListBox" ItemsSource="{Binding RightPanelItems}" SelectedIndex="{Binding RightPanelSelectedIndex}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Icon}" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding Name}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </Grid>
+
+</Window>
