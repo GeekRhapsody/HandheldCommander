@@ -89,8 +89,8 @@
         <Popup x:Name="CustomPopupMenu" IsOpen="False" PlacementMode="Center">
             <Border Background="#FF222222" CornerRadius="6" Padding="8" BoxShadow="0 2 8 0 #0008">
                 <StackPanel>
-                    <Button x:Name="PopupOption1" Content="Option 1" Margin="0,2"/>
-                    <Button x:Name="PopupOption2" Content="Option 2" Margin="0,2"/>
+                    <Button x:Name="PopupOption1" Content="Copy" Margin="0,2"/>
+                    <Button x:Name="PopupOption2" Content="Move" Margin="0,2"/>
                     <Button x:Name="PopupOption3" Content="Option 3" Margin="0,2"/>
                     <Button x:Name="PopupOption4" Content="Option 4" Margin="0,2"/>
                 </StackPanel>

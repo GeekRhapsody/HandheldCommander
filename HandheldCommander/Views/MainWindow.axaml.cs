@@ -9,6 +9,7 @@ using HandheldCommander.Views;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace HandheldCommander.Views;
 
@@ -32,11 +33,17 @@ public partial class MainWindow : Window
     private bool _popupIsOpen = false;
     private int _popupPanel = 0; // 0 = left, 1 = right
     private int _popupPanelIndex = 0;
+    private bool _dialogOpen = false;
+    private TaskCompletionSource<bool>? _dialogTcs;
+    private Button? _dialogOkBtn;
+    private Button? _dialogCancelBtn;
+    private Window? _activeDialog;
 
     public MainWindow()
     {
         Console.WriteLine("[MainWindow] Constructor called");
         InitializeComponent();
+        this.WindowState = WindowState.FullScreen;
         DataContextChanged += OnDataContextChanged;
         _controller = FindConnectedController();
         if (_controller == null)
@@ -97,7 +104,7 @@ public partial class MainWindow : Window
     private void HideCustomPopupMenu()
     {
         if (_customPopupMenu != null)
-            _customPopupMenu.IsOpen = false;
+            Dispatcher.UIThread.Post(() => _customPopupMenu.IsOpen = false);
         _popupIsOpen = false;
     }
 
@@ -109,6 +116,184 @@ public partial class MainWindow : Window
             _popupButtons[i].Classes.Set("popup-selected", i == index);
         }
         _popupButtons[index].Focus();
+    }
+
+    private async void CopySelectedItemWithConfirmation()
+    {
+        // Get selected item and target directory
+        var (srcItem, destDir) = GetCopySourceAndDest();
+        if (srcItem == null || destDir == null) return;
+        var msg = $"Copy '{srcItem.Name}' to '{destDir}'?";
+        var result = await ShowConfirmationDialog(msg);
+        if (result)
+        {
+            try
+            {
+                var destPath = Path.Combine(destDir, srcItem.Name);
+                if (srcItem.IsDirectory)
+                    CopyDirectory(srcItem.Path, destPath);
+                else
+                    File.Copy(srcItem.Path, destPath, overwrite: true);
+                // Refresh both panels
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _vm.RefreshPanels();
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowInfoDialog($"Copy failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async void MoveSelectedItemWithConfirmation()
+    {
+        var (srcItem, destDir) = GetCopySourceAndDest();
+        if (srcItem == null || destDir == null) return;
+        var msg = $"Move '{srcItem.Name}' to '{destDir}'?";
+        var result = await ShowConfirmationDialog(msg);
+        if (result)
+        {
+            try
+            {
+                var destPath = Path.Combine(destDir, srcItem.Name);
+                if (srcItem.IsDirectory)
+                {
+                    CopyDirectory(srcItem.Path, destPath);
+                    Directory.Delete(srcItem.Path, recursive: true);
+                }
+                else
+                {
+                    File.Move(srcItem.Path, destPath, overwrite: true);
+                }
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _vm.RefreshPanels();
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowInfoDialog($"Move failed: {ex.Message}");
+            }
+        }
+    }
+
+    private (HandheldCommander.Models.FileSystemItem? srcItem, string? destDir) GetCopySourceAndDest()
+    {
+        if (_vm.LeftPanelSelected)
+        {
+            var idx = _vm.LeftPanelSelectedIndex;
+            if (idx < 0 || idx >= _vm.LeftPanelItems.Count) return (null, null);
+            var item = _vm.LeftPanelItems[idx];
+            return (item, _vm.RightPanelPath);
+        }
+        else
+        {
+            var idx = _vm.RightPanelSelectedIndex;
+            if (idx < 0 || idx >= _vm.RightPanelItems.Count) return (null, null);
+            var item = _vm.RightPanelItems[idx];
+            return (item, _vm.LeftPanelPath);
+        }
+    }
+
+    private async Task<bool> ShowConfirmationDialog(string message)
+    {
+        _dialogOpen = true;
+        var okBtn = new Button { Content = "OK", Width = 80, IsDefault = true };
+        var cancelBtn = new Button { Content = "Cancel", Width = 80, Margin = new Thickness(16,0,0,0), IsCancel = true };
+        _dialogOkBtn = okBtn;
+        _dialogCancelBtn = cancelBtn;
+        var dlg = new ConfirmationDialogWindow(message, okBtn, cancelBtn);
+        _activeDialog = dlg;
+        var tcs = new TaskCompletionSource<bool>();
+        _dialogTcs = tcs;
+        okBtn.Click += (_, __) => { tcs.TrySetResult(true); dlg.Close(); };
+        cancelBtn.Click += (_, __) => { tcs.TrySetResult(false); dlg.Close(); };
+        dlg.Closed += (_, __) => { _activeDialog = null; };
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            await dlg.ShowDialog(desktop.MainWindow);
+        else
+            await dlg.ShowDialog(this);
+        _dialogOpen = false;
+        _dialogTcs = null;
+        _dialogOkBtn = null;
+        _dialogCancelBtn = null;
+        return await tcs.Task;
+    }
+
+    // Custom dialog window class
+    private class ConfirmationDialogWindow : Window
+    {
+        private readonly Button _okBtn;
+        private readonly Button _cancelBtn;
+        public ConfirmationDialogWindow(string message, Button okBtn, Button cancelBtn)
+        {
+            _okBtn = okBtn;
+            _cancelBtn = cancelBtn;
+            Width = 320;
+            Height = 140;
+            Title = "Confirm Copy";
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            Content = new StackPanel
+            {
+                Margin = new Thickness(16),
+                Children =
+                {
+                    new TextBlock { Text = message, Margin = new Thickness(0,0,0,16), TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                    new StackPanel
+                    {
+                        Orientation = Avalonia.Layout.Orientation.Horizontal,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        Children = { okBtn, cancelBtn }
+                    }
+                }
+            };
+            Opened += (_, __) => okBtn.Focus();
+        }
+        public void Ok() { _okBtn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); }
+        public void Cancel() { _cancelBtn.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); }
+    }
+
+    private async Task ShowInfoDialog(string message)
+    {
+        var okBtn = new Button { Content = "OK", Width = 80, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, IsDefault = true };
+        var dlg = new Window
+        {
+            Width = 320,
+            Height = 120,
+            Title = "Info",
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(16),
+                Children =
+                {
+                    new TextBlock { Text = message, Margin = new Thickness(0,0,0,16), TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                    okBtn
+                }
+            }
+        };
+        okBtn.Click += (_, __) => dlg.Close();
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            await dlg.ShowDialog(desktop.MainWindow);
+        else
+            await dlg.ShowDialog(this);
+    }
+
+    private void CopyDirectory(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var destFile = Path.Combine(destDir, Path.GetFileName(file));
+            File.Copy(file, destFile, overwrite: true);
+        }
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            var destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
+            CopyDirectory(dir, destSubDir);
+        }
     }
 
     private void PollGamepad(object state)
@@ -128,6 +313,32 @@ public partial class MainWindow : Window
         }
         var stateResult = _controller.GetState();
         var gamepad = stateResult.Gamepad;
+        if (_dialogOpen && _dialogTcs != null && _activeDialog is ConfirmationDialogWindow dlg)
+        {
+            // Only handle A/B for dialog
+            // Use the outer gamepad variable
+            // A = OK
+            if ((gamepad.Buttons & GamepadButtonFlags.A) != 0 && _canA)
+            {
+                Dispatcher.UIThread.Post(() => dlg.Ok());
+                _canA = false;
+            }
+            else if ((gamepad.Buttons & GamepadButtonFlags.A) == 0)
+            {
+                _canA = true;
+            }
+            // B = Cancel
+            if ((gamepad.Buttons & GamepadButtonFlags.B) != 0 && _canB)
+            {
+                Dispatcher.UIThread.Post(() => dlg.Cancel());
+                _canB = false;
+            }
+            else if ((gamepad.Buttons & GamepadButtonFlags.B) == 0)
+            {
+                _canB = true;
+            }
+            return;
+        }
         if (_popupIsOpen)
         {
             // D-Pad Up
@@ -169,6 +380,26 @@ public partial class MainWindow : Window
             else if ((gamepad.Buttons & GamepadButtonFlags.B) == 0)
             {
                 _canB = true;
+            }
+            // A button (activate selected popup option)
+            if ((gamepad.Buttons & GamepadButtonFlags.A) != 0 && _canA)
+            {
+                if (_popupSelectedIndex == 0) // Copy
+                {
+                    Dispatcher.UIThread.Post(() => CopySelectedItemWithConfirmation());
+                    HideCustomPopupMenu();
+                }
+                else if (_popupSelectedIndex == 1) // Move
+                {
+                    Dispatcher.UIThread.Post(() => MoveSelectedItemWithConfirmation());
+                    HideCustomPopupMenu();
+                }
+                // else: handle other options if needed
+                _canA = false;
+            }
+            else if ((gamepad.Buttons & GamepadButtonFlags.A) == 0)
+            {
+                _canA = true;
             }
             return; // Suppress all other navigation when popup is open
         }

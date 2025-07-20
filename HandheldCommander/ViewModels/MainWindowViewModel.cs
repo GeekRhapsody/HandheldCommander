@@ -194,6 +194,12 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public void RefreshPanels()
+    {
+        LoadDirectory(LeftPanelItems, LeftPanelPath);
+        LoadDirectory(RightPanelItems, RightPanelPath);
+    }
+
     public IEnumerable<string> LeftPanelBreadcrumbs
     {
         get
