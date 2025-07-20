@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HandheldCommander")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+639f063b772a3a85b7bd5756f09a98144ce72242")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e241e918117e00f214dd02a8ef872c4e3df4554")]
 [assembly: System.Reflection.AssemblyProductAttribute("HandheldCommander")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HandheldCommander")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

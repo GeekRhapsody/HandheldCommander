@@ -179,6 +179,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void DeleteSelectedItemWithConfirmation()
+    {
+        var (srcItem, _) = GetCopySourceAndDest();
+        if (srcItem == null) return;
+        var msg = $"Delete '{srcItem.Name}'? This cannot be undone.";
+        var result = await ShowConfirmationDialog(msg);
+        if (result)
+        {
+            try
+            {
+                if (srcItem.IsDirectory)
+                    Directory.Delete(srcItem.Path, recursive: true);
+                else
+                    File.Delete(srcItem.Path);
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _vm.RefreshPanels();
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowInfoDialog($"Delete failed: {ex.Message}");
+            }
+        }
+    }
+
     private (HandheldCommander.Models.FileSystemItem? srcItem, string? destDir) GetCopySourceAndDest()
     {
         if (_vm.LeftPanelSelected)
@@ -392,6 +418,11 @@ public partial class MainWindow : Window
                 else if (_popupSelectedIndex == 1) // Move
                 {
                     Dispatcher.UIThread.Post(() => MoveSelectedItemWithConfirmation());
+                    HideCustomPopupMenu();
+                }
+                else if (_popupSelectedIndex == 3) // Delete
+                {
+                    Dispatcher.UIThread.Post(() => DeleteSelectedItemWithConfirmation());
                     HideCustomPopupMenu();
                 }
                 // else: handle other options if needed
