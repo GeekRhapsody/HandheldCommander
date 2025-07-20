@@ -3,6 +3,7 @@
         xmlns:vm="using:HandheldCommander.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avaloniaControls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="HandheldCommander.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -60,7 +61,7 @@
             </StackPanel>
         </ScrollViewer>
         <!-- Panels Row -->
-        <Border Grid.Row="1" Grid.Column="0" BorderBrush="{Binding LeftPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
+        <Border x:Name="LeftPanelBorder" Grid.Row="1" Grid.Column="0" BorderBrush="{Binding LeftPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
             <ListBox x:Name="LeftPanelListBox" ItemsSource="{Binding LeftPanelItems}" SelectedIndex="{Binding LeftPanelSelectedIndex}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -72,7 +73,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </Border>
-        <Border Grid.Row="1" Grid.Column="1" BorderBrush="{Binding RightPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
+        <Border x:Name="RightPanelBorder" Grid.Row="1" Grid.Column="1" BorderBrush="{Binding RightPanelSelected, Converter={StaticResource BoolToBrushConverter}}" BorderThickness="3">
             <ListBox x:Name="RightPanelListBox" ItemsSource="{Binding RightPanelItems}" SelectedIndex="{Binding RightPanelSelectedIndex}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -84,6 +85,17 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </Border>
+        <!-- Custom Popup Menu -->
+        <Popup x:Name="CustomPopupMenu" IsOpen="False" PlacementMode="Center">
+            <Border Background="#FF222222" CornerRadius="6" Padding="8" BoxShadow="0 2 8 0 #0008">
+                <StackPanel>
+                    <Button x:Name="PopupOption1" Content="Option 1" Margin="0,2"/>
+                    <Button x:Name="PopupOption2" Content="Option 2" Margin="0,2"/>
+                    <Button x:Name="PopupOption3" Content="Option 3" Margin="0,2"/>
+                    <Button x:Name="PopupOption4" Content="Option 4" Margin="0,2"/>
+                </StackPanel>
+            </Border>
+        </Popup>
     </Grid>
 
 </Window>

@@ -77,3 +77,4 @@ G:\Coding\HandheldCommander\HandheldCommander\obj\Debug\net8.0\refint\HandheldCo
 G:\Coding\HandheldCommander\HandheldCommander\obj\Debug\net8.0\HandheldCommander.pdb
 G:\Coding\HandheldCommander\HandheldCommander\obj\Debug\net8.0\HandheldCommander.genruntimeconfig.cache
 G:\Coding\HandheldCommander\HandheldCommander\obj\Debug\net8.0\ref\HandheldCommander.dll
+G:\Coding\HandheldCommander\HandheldCommander\obj\Debug\net8.0\HandheldCommander.sourcelink.json
